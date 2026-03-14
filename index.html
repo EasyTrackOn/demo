@@ -6,8 +6,6 @@
     <title>Digital Ledger | Interactive Magazine</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c0392b">
     <style>
         :root {
             --w: 380px; --h: 580px;
@@ -33,17 +31,14 @@
             align-items: center; justify-content: center; z-index: 1000; 
         }
 
-        /* Top Sticky Bar */
         .reader-top-bar {
             position: fixed; top: 0; left: 0; width: 100%; height: var(--top-bar-h);
             background: #1a1a1a; display: flex; align-items: center; 
             justify-content: space-between; padding: 0 15px; z-index: 1100;
             border-bottom: 1px solid #333;
         }
-        .mag-name-label { font-size: 1rem; font-weight: 600; color: #eee; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .close-btn { font-size: 1.8rem; color: #fff; background: none; border: none; cursor: pointer; line-height: 1; }
+        .close-btn { font-size: 1.8rem; color: #fff; background: none; border: none; cursor: pointer; }
 
-        /* Bottom Control Bar */
         .reader-bottom-bar {
             position: fixed; bottom: 0; left: 0; width: 100%; height: var(--bottom-bar-h);
             background: #1a1a1a; display: flex; align-items: center; 
@@ -52,12 +47,10 @@
         }
         .nav-btn { 
             background: #333; color: #fff; border: none; padding: 8px 20px; 
-            border-radius: 4px; font-weight: 600; font-size: 0.85rem; 
-            transition: 0.2s; 
+            border-radius: 4px; font-weight: 600; cursor: pointer;
         }
-        .nav-btn:active { background: var(--accent); }
 
-        /* Book Positioning */
+        /* --- BOOK ENGINE --- */
         .book-container {
             margin-top: var(--top-bar-h);
             margin-bottom: var(--bottom-bar-h);
@@ -65,102 +58,59 @@
             display: flex; align-items: center; justify-content: center;
         }
 
-        .book { position: relative; width: var(--w); height: var(--h); transition: transform 0.5s; transform-style: preserve-3d; }
-        .paper { position: absolute; width: 100%; height: 100%; top: 0; left: 0; transform-origin: left; transition: transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1); transform-style: preserve-3d; }
+        .book { 
+            position: relative; width: var(--w); height: var(--h); 
+            transition: transform 0.5s; transform-style: preserve-3d; 
+        }
+        
+        /* Desktop: Move book to right when open */
+        @media (min-width: 768px) { .book.open { transform: translateX(50%); } }
+
+        .paper { 
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0; 
+            transform-origin: left; transition: transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1); 
+            transform-style: preserve-3d;
+            pointer-events: none; /* Crucial: clicks pass through stack */
+        }
+
+        .paper.active, .paper.flipped { pointer-events: auto; }
+
         .front, .back { 
             position: absolute; width: 100%; height: 100%; top: 0; left: 0; 
             background-color: var(--paper); backface-visibility: hidden; 
-            box-shadow: inset 3px 0px 20px rgba(0,0,0,0.15); 
-            overflow-y: auto; color: #333; 
+            box-shadow: inset 3px 0px 20px rgba(0,0,0,0.1); 
+            overflow-y: auto; color: #333; padding: 20px;
         }
+
         .back { transform: rotateY(180deg); }
-        .flipped { transform: rotateY(-180deg); }
+        .paper.flipped { transform: rotateY(-180deg); }
 
-        /* Content Styling */
-        .inner-html { width: 100%; height: 100%; }
-
-        /* Realistic Page Crease */
-.front::after {
-    content: "";
-    position: absolute;
-    top: 0; left: 0;
-    width: 30px; height: 100%;
-    background: linear-gradient(to right, rgba(0,0,0,0.1), transparent);
-    pointer-events: none;
-}
-
-.back::after {
-    content: "";
-    position: absolute;
-    top: 0; right: 0;
-    width: 30px; height: 100%;
-    background: linear-gradient(to left, rgba(0,0,0,0.1), transparent);
-    pointer-events: none;
-}
-
-/* Paper Lifting Shadow during Flip */
-.paper.flipped {
-    transform: rotateY(-180deg);
-    box-shadow: 15px 10px 30px rgba(0,0,0,0.5);
-}
-
-/* Smooth Paper transition */
-.paper {
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-
-        /* --- RESPONSIVE --- */
-        @media (min-width: 768px) { 
-            .book.open { transform: translateX(50%); } 
-            .nav-btn:hover { background: #444; }
+        /* Decorative Spine Shadow */
+        .front::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 5px; height: 100%;
+            background: linear-gradient(to right, rgba(0,0,0,0.1), transparent);
         }
 
+        /* Responsive Mobile View */
         @media (max-width: 767px) {
-            :root { --w: 90vw; --h: 75vh; }
-            .paper { transform-origin: center; visibility: hidden; opacity: 0; transition: opacity 0.3s; }
-            .paper.active { visibility: visible; opacity: 1; }
+            :root { --w: 85vw; --h: 70vh; }
+            .paper { transform-origin: center; display: none; }
+            .paper.active { display: block; }
             .paper.show-back .front { display: none; }
             .paper.show-back .back { transform: rotateY(0deg); }
         }
-
-        /* Adding a subtle paper grain and shadow to the page */
-.front, .back {
-    background-image: linear-gradient(to right, rgba(255,255,255,0) 95%, rgba(0,0,0,0.05) 100%);
-    transition: transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1);
-}
-
-/* Realistic Spine Shadow (Deep Shadow in the center) */
-.front::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0;
-    width: 2px; height: 100%;
-    background: rgba(0,0,0,0.2);
-    z-index: 5;
-}
-
-/* Page Turn Animation improvement */
-.paper.flipped {
-    transform: rotateY(-180deg);
-}
-
-/* 3D Depth on the edges */
-.paper {
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
-}
     </style>
 </head>
 <body>
 
     <div id="home-page">
-        <h1 style="font-family:'Playfair Display'; margin-bottom:10px;">E-Library</h1>
+        <h1 style="font-family:'Playfair Display'; margin: 20px 0;">E-Library</h1>
         <div class="magazine-grid" id="magazine-grid"></div>
     </div>
 
     <div id="reader-view">
         <div class="reader-top-bar">
-            <span class="mag-name-label" id="active-mag-title">Loading...</span>
+            <span id="active-mag-title" class="px-3">Loading...</span>
             <button class="close-btn" onclick="closeReader()">&times;</button>
         </div>
 
@@ -175,12 +125,7 @@
     </div>
 
     <script>
-        if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js')
-    .then(() => console.log("Service Worker Registered"));
-}
         const GAS_URL = "https://script.google.com/macros/s/AKfycbx7GvBfO0bzBxDttsk2QYBfqLHae0m4InojyNdf9_GGizwHbFAEHiEap4k-Fpu6vGqSFw/exec";
-
         let currentPaper = 1;
         let totalPapers = 0;
         let showingBack = false;
@@ -188,121 +133,62 @@
         const isMobile = () => window.innerWidth < 768;
 
         async function init() {
-    const cacheKey = "library_cache";
-    const localLibrary = localStorage.getItem(cacheKey);
-    const grid = document.getElementById('magazine-grid');
-
-    // 1. Load from Cache immediately if available
-    if (localLibrary) {
-        console.log("Loading Library from Cache...");
-        renderLibrary(JSON.parse(localLibrary));
-    } else {
-        grid.innerHTML = "<h2 class='text-white-50'>Connecting to Library...</h2>";
-    }
-
-    try {
-        // 2. Fetch fresh data from GAS
-        const res = await fetch(GAS_URL);
-        const mags = await res.json();
-        const magsString = JSON.stringify(mags);
-
-        // 3. Update if server data is different from Cache
-        if (magsString !== localLibrary) {
-            console.log("Library updated from server.");
-            localStorage.setItem(cacheKey, magsString);
-            renderLibrary(mags);
-            
-            // Optional: If you want to show a small "Updated" message
-            if (localLibrary) {
-                console.log("Library list was refreshed with new content.");
+            const grid = document.getElementById('magazine-grid');
+            try {
+                const res = await fetch(GAS_URL);
+                const mags = await res.json();
+                grid.innerHTML = mags.map(m => `
+                    <div class="mag-thumb" onclick="openBook('${m.id}', '${m.title}')">
+                        <img src="${m.cover}" loading="lazy">
+                        <h3 class="mt-2" style="font-size:1.1rem;">${m.title}</h3>
+                    </div>
+                `).join('');
+            } catch (e) {
+                grid.innerHTML = "<h3>Error loading library.</h3>";
             }
         }
-    } catch (e) {
-        console.error("Library fetch failed:", e);
-        if (!localLibrary) {
-            grid.innerHTML = "<h3>Offline. Please check your connection.</h3>";
-        }
-    }
-}
-
-// Helper to render the magazine thumbnails
-function renderLibrary(mags) {
-    const grid = document.getElementById('magazine-grid');
-    grid.innerHTML = mags.map(m => `
-        <div class="mag-thumb" onclick="openBook('${m.id}', '${m.title}')">
-            <img src="${m.cover.trim()}" loading="lazy">
-            <h3 class="mt-2" style="font-size:1.1rem;">${m.title}</h3>
-        </div>
-    `).join('');
-}
 
         async function openBook(magId, magTitle) {
-    const cacheKey = `mag_cache_${magId}`;
-    const localData = localStorage.getItem(cacheKey);
-
-    // 1. If we have cached data, load it immediately for speed
-    if (localData) {
-        console.log("Loading from Cache...");
-        renderMagazine(JSON.parse(localData), magTitle);
-    }
-
-    try {
-        // 2. Background check for updates
-        const res = await fetch(`${GAS_URL}?magId=${magId}`);
-        const newData = await res.json();
-        const newDataString = JSON.stringify(newData);
-
-        // 3. If the data from Sheet is different than Cache, update UI
-        if (newDataString !== localData) {
-            console.log("New updates found! Updating magazine...");
-            localStorage.setItem(cacheKey, newDataString);
-            
-            // If the reader is already open, alert the user or just refresh
-            if (localData) {
-                // Optional: show a small toast notification "Content Updated"
-                renderMagazine(newData, magTitle);
-            } else {
-                renderMagazine(newData, magTitle);
-            }
+            document.getElementById('active-mag-title').innerText = magTitle;
+            try {
+                const res = await fetch(`${GAS_URL}?magId=${magId}`);
+                const data = await res.json();
+                renderMagazine(data);
+            } catch (e) { alert("Error fetching content."); }
         }
-    } catch (e) {
-        if (!localData) alert("Offline and no cached data found.");
-    }
-}
 
-// Separate function to build the book elements
-function renderMagazine(data, magTitle) {
-    document.getElementById('active-mag-title').innerText = magTitle;
-    const container = document.getElementById('book');
-    container.innerHTML = "";
+        function renderMagazine(data) {
+            const container = document.getElementById('book');
+            container.innerHTML = "";
+            
+            // Group data into pairs for papers
+            for (let i = 0; i < data.length; i += 2) {
+                const paperNum = (i / 2) + 1;
+                const frontContent = data[i]?.content || '';
+                const backContent = data[i+1]?.content || (i+1 < data.length ? '' : '<div class="text-center mt-5"><h2>FIN</h2></div>');
+                
+                const paper = document.createElement('div');
+                paper.className = `paper ${paperNum === 1 ? 'active' : ''}`;
+                paper.id = `p${paperNum}`;
+                paper.style.zIndex = 100 - paperNum; // Initial stack: 1 on top
+                
+                paper.innerHTML = `
+                    <div class="front">${frontContent}</div>
+                    <div class="back">${backContent}</div>
+                `;
+                container.appendChild(paper);
+            }
 
-    for (let i = 0; i < data.length; i += 2) {
-        const paperNum = (i / 2) + 1;
-        container.insertAdjacentHTML('beforeend', createPaper(data[i], data[i+1], paperNum));
-    }
-
-    totalPapers = Math.ceil(data.length / 2);
-    currentPaper = 1; 
-    showingBack = false;
-    
-    document.getElementById('home-page').style.display = 'none';
-    document.getElementById('reader-view').style.display = 'flex';
-}
-        function createPaper(frontData, backData, num) {
-            const render = (d) => {
-                if (!d) return `<div style="background:#fff; height:100%; display:flex; align-items:center; justify-content:center;"><h2>FIN</h2></div>`;
-                return `<div class="inner-html">${d.content || ''}</div>`;
-            };
-
-            return `
-                <div class="paper ${num === 1 ? 'active' : ''}" id="p${num}" style="z-index: ${100 - num}">
-                    <div class="front">${render(frontData)}</div>
-                    <div class="back">${render(backData)}</div>
-                </div>
-            `;
+            totalPapers = Math.ceil(data.length / 2);
+            currentPaper = 1;
+            showingBack = false;
+            document.getElementById('home-page').style.display = 'none';
+            document.getElementById('reader-view').style.display = 'flex';
         }
 
         function nextPage() {
+            if (currentPaper > totalPapers) return;
+
             if (isMobile()) {
                 const p = document.getElementById(`p${currentPaper}`);
                 if (!showingBack) {
@@ -314,16 +200,26 @@ function renderMagazine(data, magTitle) {
                     document.getElementById(`p${currentPaper}`).classList.add('active');
                     showingBack = false;
                 }
-            } else if (currentPaper <= totalPapers) {
+            } else {
                 const p = document.getElementById(`p${currentPaper}`);
-                p.classList.add('flipped');
-                p.style.zIndex = currentPaper;
-                if (currentPaper === 1) document.getElementById('book').classList.add('open');
-                currentPaper++;
+                if (p) {
+                    p.classList.add('flipped');
+                    // When flipped, it should move to the bottom of the left stack
+                    p.style.zIndex = currentPaper; 
+                    if (currentPaper === 1) document.getElementById('book').classList.add('open');
+                    
+                    currentPaper++;
+                    // Make the next paper "active" so it's clickable
+                    if(currentPaper <= totalPapers) {
+                        document.getElementById(`p${currentPaper}`).classList.add('active');
+                    }
+                }
             }
         }
 
         function prevPage() {
+            if (currentPaper < 1) return;
+
             if (isMobile()) {
                 const p = document.getElementById(`p${currentPaper}`);
                 if (showingBack) {
@@ -336,12 +232,16 @@ function renderMagazine(data, magTitle) {
                     prev.classList.add('active', 'show-back');
                     showingBack = true;
                 }
-            } else if (currentPaper > 1) {
-                currentPaper--;
-                const p = document.getElementById(`p${currentPaper}`);
-                p.classList.remove('flipped');
-                p.style.zIndex = (totalPapers - currentPaper) + 10;
-                if (currentPaper === 1) document.getElementById('book').classList.remove('open');
+            } else {
+                if (currentPaper > 1) {
+                    currentPaper--;
+                    const p = document.getElementById(`p${currentPaper}`);
+                    p.classList.remove('flipped');
+                    // Return to its original stack position
+                    p.style.zIndex = 100 - currentPaper; 
+                    
+                    if (currentPaper === 1) document.getElementById('book').classList.remove('open');
+                }
             }
         }
 
@@ -349,9 +249,6 @@ function renderMagazine(data, magTitle) {
             document.getElementById('reader-view').style.display = 'none';
             document.getElementById('home-page').style.display = 'block';
             document.getElementById('book').classList.remove('open');
-            // Reset state
-            currentPaper = 1;
-            showingBack = false;
         }
 
         window.onload = init;
