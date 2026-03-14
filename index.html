@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Digital Ledger | Interactive Magazine</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -10,8 +10,7 @@
         :root {
             --w: 380px; --h: 580px;
             --primary: #1a1a1a; --paper: #ffffff; --accent: #c0392b;
-            --top-bar-h: 50px;
-            --bottom-bar-h: 60px;
+            --top-bar-h: 55px; --bottom-bar-h: 65px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,105 +18,67 @@
 
         /* --- HOME PAGE --- */
         #home-page { width: 100%; height: 100vh; padding: 20px; overflow-y: auto; text-align: center; }
-        .magazine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; max-width: 1100px; margin: 20px auto; }
-        .mag-thumb { cursor: pointer; background: #1e1e1e; padding: 15px; border-radius: 8px; transition: 0.3s; }
-        .mag-thumb:hover { transform: translateY(-5px); background: #252525; }
-        .mag-thumb img { width: 100%; height: 280px; object-fit: cover; border-radius: 4px; }
+        .shelf-title { font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 25px; }
+        .magazine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; max-width: 1100px; margin: 0 auto; }
+        
+        .mag-thumb { cursor: pointer; background: #1e1e1e; padding: 12px; border-radius: 12px; transition: 0.3s; border: 1px solid #333; }
+        .thumb-preview { width: 100%; height: 240px; overflow: hidden; background: #fff; border-radius: 8px; pointer-events: none; }
+        .thumb-preview * { transform: scale(0.65); transform-origin: top center; color: #333 !important; }
+        .mag-thumb h3 { font-size: 1rem; margin-top: 12px; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
 
         /* --- READER VIEW --- */
-        #reader-view { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #000; display: none; flex-direction: column; 
-            align-items: center; justify-content: center; z-index: 1000; 
-        }
-
+        #reader-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
+        
         .reader-top-bar {
             position: fixed; top: 0; left: 0; width: 100%; height: var(--top-bar-h);
-            background: #1a1a1a; display: flex; align-items: center; 
-            justify-content: space-between; padding: 0 15px; z-index: 1100;
-            border-bottom: 1px solid #333;
+            background: #111; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; z-index: 1100; border-bottom: 1px solid #222;
         }
-        .close-btn { font-size: 1.8rem; color: #fff; background: none; border: none; cursor: pointer; }
+        .mag-name-label { font-size: 0.9rem; font-weight: 600; color: #aaa; text-transform: uppercase; }
+        .close-btn { font-size: 2.2rem; color: #fff; background: none; border: none; line-height: 1; cursor: pointer; }
 
         .reader-bottom-bar {
             position: fixed; bottom: 0; left: 0; width: 100%; height: var(--bottom-bar-h);
-            background: #1a1a1a; display: flex; align-items: center; 
-            justify-content: center; gap: 40px; z-index: 1100;
-            border-top: 1px solid #333;
+            background: #111; display: flex; align-items: center; justify-content: center; gap: 40px; z-index: 1100; border-top: 1px solid #222;
         }
-        .nav-btn { 
-            background: #333; color: #fff; border: none; padding: 8px 20px; 
-            border-radius: 4px; font-weight: 600; cursor: pointer;
-        }
+        .nav-btn { background: var(--accent); color: #fff; border: none; padding: 10px 25px; border-radius: 30px; font-weight: bold; font-size: 0.8rem; }
 
-        /* --- BOOK ENGINE --- */
-        .book-container {
-            margin-top: var(--top-bar-h);
-            margin-bottom: var(--bottom-bar-h);
-            perspective: 2000px;
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        .book { 
-            position: relative; width: var(--w); height: var(--h); 
-            transition: transform 0.5s; transform-style: preserve-3d; 
-        }
-        
-        /* Desktop: Move book to right when open */
-        @media (min-width: 768px) { .book.open { transform: translateX(50%); } }
-
-        .paper { 
-            position: absolute; width: 100%; height: 100%; top: 0; left: 0; 
-            transform-origin: left; transition: transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1); 
-            transform-style: preserve-3d;
-            pointer-events: none; /* Crucial: clicks pass through stack */
-        }
-
-        .paper.active, .paper.flipped { pointer-events: auto; }
-
-        .front, .back { 
-            position: absolute; width: 100%; height: 100%; top: 0; left: 0; 
-            background-color: var(--paper); backface-visibility: hidden; 
-            box-shadow: inset 3px 0px 20px rgba(0,0,0,0.1); 
-            overflow-y: auto; color: #333; padding: 20px;
-        }
-
+        /* --- 3D BOOK ENGINE --- */
+        .book-container { margin-top: var(--top-bar-h); margin-bottom: var(--bottom-bar-h); perspective: 2000px; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .book { position: relative; width: var(--w); height: var(--h); transform-style: preserve-3d; transition: transform 0.5s; }
+        .paper { position: absolute; width: 100%; height: 100%; top: 0; left: 0; transform-origin: left; transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1); transform-style: preserve-3d; z-index: 1; }
+        .front, .back { position: absolute; width: 100%; height: 100%; top: 0; left: 0; background-color: #fff; backface-visibility: hidden; box-shadow: inset 3px 0px 20px rgba(0,0,0,0.1); overflow-y: auto; padding: 0; color: #333; }
         .back { transform: rotateY(180deg); }
-        .paper.flipped { transform: rotateY(-180deg); }
+        .flipped { transform: rotateY(-180deg); }
 
-        /* Decorative Spine Shadow */
-        .front::before {
-            content: ""; position: absolute; top: 0; left: 0; width: 5px; height: 100%;
-            background: linear-gradient(to right, rgba(0,0,0,0.1), transparent);
-        }
+        /* Crease and Shadow */
+        .front::after { content: ""; position: absolute; top: 0; left: 0; width: 20px; height: 100%; background: linear-gradient(to right, rgba(0,0,0,0.05), transparent); pointer-events: none; }
+        .back::after { content: ""; position: absolute; top: 0; right: 0; width: 20px; height: 100%; background: linear-gradient(to left, rgba(0,0,0,0.05), transparent); pointer-events: none; }
 
-        /* Responsive Mobile View */
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 3000; color: white; }
+
         @media (max-width: 767px) {
-            :root { --w: 85vw; --h: 70vh; }
-            .paper { transform-origin: center; display: none; }
-            .paper.active { display: block; }
-            .paper.show-back .front { display: none; }
-            .paper.show-back .back { transform: rotateY(0deg); }
+            :root { --w: 88vw; --h: 70vh; }
+            .book.open { transform: none; }
         }
     </style>
 </head>
 <body>
 
+    <div id="loading-screen"><h4>Fetching Pages...</h4></div>
+
     <div id="home-page">
-        <h1 style="font-family:'Playfair Display'; margin: 20px 0;">E-Library</h1>
+        <h1 class="shelf-title">E-LIBRARY</h1>
         <div class="magazine-grid" id="magazine-grid"></div>
     </div>
 
     <div id="reader-view">
         <div class="reader-top-bar">
-            <span id="active-mag-title" class="px-3">Loading...</span>
+            <span class="mag-name-label" id="active-mag-title">...</span>
             <button class="close-btn" onclick="closeReader()">&times;</button>
         </div>
-
         <div class="book-container">
             <div class="book" id="book"></div>
         </div>
-
         <div class="reader-bottom-bar">
             <button class="nav-btn" onclick="prevPage()">PREV</button>
             <button class="nav-btn" onclick="nextPage()">NEXT</button>
@@ -125,130 +86,95 @@
     </div>
 
     <script>
+        // REPLACE THIS URL WITH YOUR DEPLOYED APPS SCRIPT URL
         const GAS_URL = "https://script.google.com/macros/s/AKfycbx7GvBfO0bzBxDttsk2QYBfqLHae0m4InojyNdf9_GGizwHbFAEHiEap4k-Fpu6vGqSFw/exec";
+        
         let currentPaper = 1;
         let totalPapers = 0;
-        let showingBack = false;
 
-        const isMobile = () => window.innerWidth < 768;
-
+        // 1. Initial Library Load (Page 1s Only)
         async function init() {
-            const grid = document.getElementById('magazine-grid');
+            const cacheKey = "lib_cache";
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) renderLibrary(JSON.parse(cached));
+
             try {
                 const res = await fetch(GAS_URL);
-                const mags = await res.json();
-                grid.innerHTML = mags.map(m => `
-                    <div class="mag-thumb" onclick="openBook('${m.id}', '${m.title}')">
-                        <img src="${m.cover}" loading="lazy">
-                        <h3 class="mt-2" style="font-size:1.1rem;">${m.title}</h3>
-                    </div>
-                `).join('');
-            } catch (e) {
-                grid.innerHTML = "<h3>Error loading library.</h3>";
-            }
+                const data = await res.json();
+                localStorage.setItem(cacheKey, JSON.stringify(data));
+                renderLibrary(data);
+            } catch (e) { console.warn("Offline mode active."); }
         }
 
-        async function openBook(magId, magTitle) {
-            document.getElementById('active-mag-title').innerText = magTitle;
+        function renderLibrary(mags) {
+            const grid = document.getElementById('magazine-grid');
+            grid.innerHTML = mags.map(m => `
+                <div class="mag-thumb" onclick="openBook('${m.magazineid}')">
+                    <div class="thumb-preview">${m.content}</div>
+                    <h3>${m.magazineid}</h3>
+                </div>
+            `).join('');
+        }
+
+        // 2. Open Full Magazine (Fetch all pages)
+        async function openBook(magId) {
+            document.getElementById('loading-screen').style.display = 'flex';
+            const cacheKey = `mag_full_${magId}`;
+            const cached = localStorage.getItem(cacheKey);
+            
+            if (cached) renderMagazine(JSON.parse(cached), magId);
+
             try {
                 const res = await fetch(`${GAS_URL}?magId=${magId}`);
                 const data = await res.json();
-                renderMagazine(data);
-            } catch (e) { alert("Error fetching content."); }
+                localStorage.setItem(cacheKey, JSON.stringify(data));
+                renderMagazine(data, magId);
+            } catch (e) { if(!cached) alert("Connection error."); }
+            finally { document.getElementById('loading-screen').style.display = 'none'; }
         }
 
-        function renderMagazine(data) {
+        function renderMagazine(data, id) {
+            document.getElementById('active-mag-title').innerText = id;
             const container = document.getElementById('book');
             container.innerHTML = "";
             
-            // Group data into pairs for papers
             for (let i = 0; i < data.length; i += 2) {
-                const paperNum = (i / 2) + 1;
-                const frontContent = data[i]?.content || '';
-                const backContent = data[i+1]?.content || (i+1 < data.length ? '' : '<div class="text-center mt-5"><h2>FIN</h2></div>');
-                
-                const paper = document.createElement('div');
-                paper.className = `paper ${paperNum === 1 ? 'active' : ''}`;
-                paper.id = `p${paperNum}`;
-                paper.style.zIndex = 100 - paperNum; // Initial stack: 1 on top
-                
-                paper.innerHTML = `
-                    <div class="front">${frontContent}</div>
-                    <div class="back">${backContent}</div>
-                `;
-                container.appendChild(paper);
+                const pNum = (i / 2) + 1;
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="paper ${pNum === 1 ? 'active' : ''}" id="p${pNum}" style="z-index: ${100 - pNum}">
+                        <div class="front">${data[i].content}</div>
+                        <div class="back">${data[i+1] ? data[i+1].content : '<div style="background:#fff; height:100%; display:flex; align-items:center; justify-content:center;"><h2>THE END</h2></div>'}</div>
+                    </div>
+                `);
             }
-
             totalPapers = Math.ceil(data.length / 2);
             currentPaper = 1;
-            showingBack = false;
             document.getElementById('home-page').style.display = 'none';
             document.getElementById('reader-view').style.display = 'flex';
         }
 
+        // 3. Navigation
         function nextPage() {
-            if (currentPaper > totalPapers) return;
-
-            if (isMobile()) {
+            if (currentPaper <= totalPapers) {
                 const p = document.getElementById(`p${currentPaper}`);
-                if (!showingBack) {
-                    p.classList.add('show-back');
-                    showingBack = true;
-                } else if (currentPaper < totalPapers) {
-                    p.classList.remove('active');
-                    currentPaper++;
-                    document.getElementById(`p${currentPaper}`).classList.add('active');
-                    showingBack = false;
-                }
-            } else {
-                const p = document.getElementById(`p${currentPaper}`);
-                if (p) {
-                    p.classList.add('flipped');
-                    // When flipped, it should move to the bottom of the left stack
-                    p.style.zIndex = currentPaper; 
-                    if (currentPaper === 1) document.getElementById('book').classList.add('open');
-                    
-                    currentPaper++;
-                    // Make the next paper "active" so it's clickable
-                    if(currentPaper <= totalPapers) {
-                        document.getElementById(`p${currentPaper}`).classList.add('active');
-                    }
-                }
+                p.classList.add('flipped');
+                p.style.zIndex = currentPaper;
+                currentPaper++;
             }
         }
 
         function prevPage() {
-            if (currentPaper < 1) return;
-
-            if (isMobile()) {
+            if (currentPaper > 1) {
+                currentPaper--;
                 const p = document.getElementById(`p${currentPaper}`);
-                if (showingBack) {
-                    p.classList.remove('show-back');
-                    showingBack = false;
-                } else if (currentPaper > 1) {
-                    p.classList.remove('active');
-                    currentPaper--;
-                    const prev = document.getElementById(`p${currentPaper}`);
-                    prev.classList.add('active', 'show-back');
-                    showingBack = true;
-                }
-            } else {
-                if (currentPaper > 1) {
-                    currentPaper--;
-                    const p = document.getElementById(`p${currentPaper}`);
-                    p.classList.remove('flipped');
-                    // Return to its original stack position
-                    p.style.zIndex = 100 - currentPaper; 
-                    
-                    if (currentPaper === 1) document.getElementById('book').classList.remove('open');
-                }
+                p.classList.remove('flipped');
+                p.style.zIndex = (totalPapers - currentPaper) + 100;
             }
         }
 
         function closeReader() {
             document.getElementById('reader-view').style.display = 'none';
             document.getElementById('home-page').style.display = 'block';
-            document.getElementById('book').classList.remove('open');
         }
 
         window.onload = init;
