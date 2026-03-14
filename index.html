@@ -16,15 +16,15 @@
         body { background-color: #121212; font-family: 'Inter', sans-serif; color: white; min-height: 100vh; overflow: hidden; }
 
         /* --- HOME PAGE --- */
-        #home-page { width: 100%; height: 100vh; padding: 50px 20px; overflow-y: auto; text-align: center; }
-        .magazine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 30px; max-width: 1100px; margin: 40px auto; }
+        #home-page { width: 100%; height: 90vh; padding: 10px 10px; overflow-y: auto; text-align: center; }
+        .magazine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; max-width: 1100px; margin: 10px auto; }
         .mag-thumb { cursor: pointer; background: #1e1e1e; padding: 15px; border-radius: 8px; transition: 0.3s; }
         .mag-thumb:hover { transform: translateY(-10px); background: #252525; }
         .mag-thumb img { width: 100%; height: 300px; object-fit: cover; border-radius: 4px; }
 
         /* --- READER VIEW --- */
         #reader-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; perspective: 2000px; z-index: 1000; }
-        .close-reader { position: absolute; top: 20px; right: 20px; font-size: 3rem; color: white; cursor: pointer; border: none; background: none; z-index: 1100; }
+        .close-reader { position: absolute; top: 10px; right: 10px; font-size: 3rem; color: white; cursor: pointer; border: none; background: none; z-index: 1100; }
 
         .book { position: relative; width: var(--w); height: var(--h); transition: transform 0.5s; transform-style: preserve-3d; }
         .paper { position: absolute; width: 100%; height: 100%; top: 0; left: 0; transform-origin: left; transition: transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1); transform-style: preserve-3d; }
@@ -33,7 +33,7 @@
         .flipped { transform: rotateY(-180deg); }
 
         /* --- MAGAZINE STYLES --- */
-        .mag-header { background: var(--accent); color: white; padding: 8px 12px; font-weight: bold; margin-bottom: 15px; border-radius: 4px; display: inline-block; }
+        .mag-header { background: var(--accent); color: white; padding: 8px 2px; font-weight: bold; margin-bottom: 15px; border-radius: 4px; display: inline-block; }
         .inner-html { font-size: 0.9rem; line-height: 1.6; text-align: justify; }
         .image-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 15px 0; }
         .grid-img { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
@@ -50,28 +50,8 @@
             .paper.show-back .back { transform: rotateY(0deg); }
         }
 
-        .controls { position: absolute; bottom: 30px; display: flex; gap: 30px; }
-        .btn { padding: 12px 30px; border-radius: 5px; border: 1px solid white; cursor: pointer; background: transparent; color: white; font-weight: bold; }
-    
- .page-box {
-    padding: 20px;
-    font-size: 0.9rem;
-    color: #333;
-}
-
-/* Fix Bootstrap margins inside the book */
-.page-box .row {
-    margin-right: 0;
-    margin-left: 0;
-}
-
-.mag-header {
-    background-color: #c0392b; /* Your accent color */
-    color: white;
-    padding: 5px 15px;
-    margin-bottom: 15px;
-    border-radius: 2px;
-}   
+        .controls { position: absolute; bottom: 10px; display: flex; gap: 10px; }
+        .btn { padding: 12px 30px; border-radius: 5px; border: 1px solid rgb(226, 29, 29); cursor: pointer; background: transparent; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -136,20 +116,18 @@
 
         function createPaper(frontData, backData, num) {
             const render = (d) => {
-                if (!d) return `<div class="cover-design"><h2>FIN</h2></div>`;
-                const imgIds = d.imageid ? d.imageid.split(',') : [];
-                const imgHtml = imgIds.length > 1 
-                    ? `<div class="image-grid">${imgIds.map(id => `<img src="${getLink(id)}" class="grid-img">`).join('')}</div>`
-                    : (imgIds[0] ? `<img src="${getLink(imgIds[0])}" class="single-img">` : '');
-
-                return `
-                    <div class="${d.type === 'cover' ? 'cover-design' : 'page-box'}">
-                        <div class="mag-header">${d.title || ''}</div>
-                        ${imgHtml}
-                        <div class="inner-html">${d.content || ''}</div>
-                    </div>
-                `;
-            };
+    if (!d) return `<div class="cover-design"><h2>FIN</h2></div>`;
+    
+    // We only provide the outer wrapper. 
+    // All headers, images, and text now come from the 'content' column.
+    return `
+        <div class="${d.type === 'cover' ? '' : 'page-box'}">
+            <div class="inner-html">
+                ${d.content || ''}
+            </div>
+        </div>
+    `;
+};
 
             return `
                 <div class="paper ${num === 1 ? 'active' : ''}" id="p${num}" style="z-index: ${100 - num}">
