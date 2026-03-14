@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Ledger | Interactive Magazine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --w: 380px; --h: 580px;
+            --primary: #1a1a1a; --paper: #ffffff; --accent: #c0392b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #121212; font-family: 'Inter', sans-serif; color: white; min-height: 100vh; overflow: hidden; }
+
+        /* --- HOME PAGE --- */
+        #home-page { width: 100%; height: 100vh; padding: 50px 20px; overflow-y: auto; text-align: center; }
+        .magazine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 30px; max-width: 1100px; margin: 40px auto; }
+        .mag-thumb { cursor: pointer; background: #1e1e1e; padding: 15px; border-radius: 8px; transition: 0.3s; }
+        .mag-thumb:hover { transform: translateY(-10px); background: #252525; }
+        .mag-thumb img { width: 100%; height: 300px; object-fit: cover; border-radius: 4px; }
+
+        /* --- READER VIEW --- */
+        #reader-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; perspective: 2000px; z-index: 1000; }
+        .close-reader { position: absolute; top: 20px; right: 20px; font-size: 3rem; color: white; cursor: pointer; border: none; background: none; z-index: 1100; }
+
+        .book { position: relative; width: var(--w); height: var(--h); transition: transform 0.5s; transform-style: preserve-3d; }
+        .paper { position: absolute; width: 100%; height: 100%; top: 0; left: 0; transform-origin: left; transition: transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1); transform-style: preserve-3d; }
+        .front, .back { position: absolute; width: 100%; height: 100%; top: 0; left: 0; background-color: var(--paper); backface-visibility: hidden; box-shadow: inset 3px 0px 20px rgba(0,0,0,0.15); overflow-y: auto; padding: 25px; color: #333; }
+        .back { transform: rotateY(180deg); }
+        .flipped { transform: rotateY(-180deg); }
+
+        /* --- MAGAZINE STYLES --- */
+        .mag-header { background: var(--accent); color: white; padding: 8px 12px; font-weight: bold; margin-bottom: 15px; border-radius: 4px; display: inline-block; }
+        .inner-html { font-size: 0.9rem; line-height: 1.6; text-align: justify; }
+        .image-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 15px 0; }
+        .grid-img { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
+        .single-img { width: 100%; height: auto; max-height: 300px; object-fit: contain; margin-bottom: 15px; border-radius: 4px; }
+        .cover-design { background: var(--primary); color: white; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+
+        /* --- RESPONSIVE --- */
+        @media (min-width: 768px) { .book.open { transform: translateX(50%); } }
+        @media (max-width: 767px) {
+            :root { --w: 85vw; --h: 75vh; }
+            .paper { transform-origin: center; visibility: hidden; opacity: 0; transition: opacity 0.3s; }
+            .paper.active { visibility: visible; opacity: 1; }
+            .paper.show-back .front { display: none; }
+            .paper.show-back .back { transform: rotateY(0deg); }
+        }
+
+        .controls { position: absolute; bottom: 30px; display: flex; gap: 30px; }
+        .btn { padding: 12px 30px; border-radius: 5px; border: 1px solid white; cursor: pointer; background: transparent; color: white; font-weight: bold; }
+    
+ .page-box {
+    padding: 20px;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+/* Fix Bootstrap margins inside the book */
+.page-box .row {
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.mag-header {
+    background-color: #c0392b; /* Your accent color */
+    color: white;
+    padding: 5px 15px;
+    margin-bottom: 15px;
+    border-radius: 2px;
+}   
+    </style>
+</head>
+<body>
+
+    <div id="home-page">
+        <h1 style="font-family:'Playfair Display'; margin-bottom:10px;">E-Library</h1>
+        <div class="magazine-grid" id="magazine-grid"></div>
+    </div>
+
+    <div id="reader-view">
+        <button class="close-reader" onclick="closeReader()">&times;</button>
+        <div class="book" id="book"></div>
+        <div class="controls">
+            <button class="btn" onclick="prevPage()">PREV</button>
+            <button class="btn" onclick="nextPage()">NEXT</button>
+        </div>
+    </div>
+
+    <script>
+       // const GAS_URL = "YOUR_GAS_WEB_APP_URL";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbx7GvBfO0bzBxDttsk2QYBfqLHae0m4InojyNdf9_GGizwHbFAEHiEap4k-Fpu6vGqSFw/exec";
+
+        let currentPaper = 1;
+        let totalPapers = 0;
+        let showingBack = false;
+
+        const isMobile = () => window.innerWidth < 768;
+        const getLink = (id) => id ? `${id.trim()}` : '';
+
+        async function init() {
+            try {
+                const res = await fetch(GAS_URL);
+                const mags = await res.json();
+                const grid = document.getElementById('magazine-grid');
+                grid.innerHTML = mags.map(m => `
+                    <div class="mag-thumb" onclick="openBook('${m.id}')">
+                        <img src="${getLink(m.cover)}">
+                        <h3>${m.title}</h3>
+                    </div>
+                `).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function openBook(magId) {
+            try {
+                const res = await fetch(`${GAS_URL}?magId=${magId}`);
+                const data = await res.json();
+                const container = document.getElementById('book');
+                container.innerHTML = "";
+
+                for (let i = 0; i < data.length; i += 2) {
+                    const paperNum = (i / 2) + 1;
+                    container.insertAdjacentHTML('beforeend', createPaper(data[i], data[i+1], paperNum));
+                }
+
+                totalPapers = Math.ceil(data.length / 2);
+                currentPaper = 1; showingBack = false;
+                document.getElementById('home-page').style.display = 'none';
+                document.getElementById('reader-view').style.display = 'flex';
+            } catch (e) { alert("Error loading book"); }
+        }
+
+        function createPaper(frontData, backData, num) {
+            const render = (d) => {
+                if (!d) return `<div class="cover-design"><h2>FIN</h2></div>`;
+                const imgIds = d.imageid ? d.imageid.split(',') : [];
+                const imgHtml = imgIds.length > 1 
+                    ? `<div class="image-grid">${imgIds.map(id => `<img src="${getLink(id)}" class="grid-img">`).join('')}</div>`
+                    : (imgIds[0] ? `<img src="${getLink(imgIds[0])}" class="single-img">` : '');
+
+                return `
+                    <div class="${d.type === 'cover' ? 'cover-design' : 'page-box'}">
+                        <div class="mag-header">${d.title || ''}</div>
+                        ${imgHtml}
+                        <div class="inner-html">${d.content || ''}</div>
+                    </div>
+                `;
+            };
+
+            return `
+                <div class="paper ${num === 1 ? 'active' : ''}" id="p${num}" style="z-index: ${100 - num}">
+                    <div class="front">${render(frontData)}</div>
+                    <div class="back">${render(backData)}</div>
+                </div>
+            `;
+        }
+
+        function nextPage() {
+            if (isMobile()) {
+                const p = document.getElementById(`p${currentPaper}`);
+                if (!showingBack) { p.classList.add('show-back'); showingBack = true; }
+                else if (currentPaper < totalPapers) { p.classList.remove('active'); currentPaper++; document.getElementById(`p${currentPaper}`).classList.add('active'); showingBack = false; }
+            } else if (currentPaper <= totalPapers) {
+                const p = document.getElementById(`p${currentPaper}`);
+                p.classList.add('flipped'); p.style.zIndex = currentPaper;
+                if (currentPaper === 1) document.getElementById('book').classList.add('open');
+                currentPaper++;
+            }
+        }
+
+        function prevPage() {
+            if (isMobile()) {
+                const p = document.getElementById(`p${currentPaper}`);
+                if (showingBack) { p.classList.remove('show-back'); showingBack = false; }
+                else if (currentPaper > 1) { p.classList.remove('active'); currentPaper--; const prev = document.getElementById(`p${currentPaper}`); prev.classList.add('active', 'show-back'); showingBack = true; }
+            } else if (currentPaper > 1) {
+                currentPaper--; const p = document.getElementById(`p${currentPaper}`);
+                p.classList.remove('flipped'); p.style.zIndex = (totalPapers - currentPaper) + 10;
+                if (currentPaper === 1) document.getElementById('book').classList.remove('open');
+            }
+        }
+
+        function closeReader() {
+            document.getElementById('reader-view').style.display = 'none';
+            document.getElementById('home-page').style.display = 'block';
+            document.getElementById('book').classList.remove('open');
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
