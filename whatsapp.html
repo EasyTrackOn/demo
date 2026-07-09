@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send WhatsApp Message</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        input,
+        textarea {
+            padding: 8px;
+            width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: Arial, sans-serif;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #25D366;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1da851;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Send WhatsApp Message</h2>
+
+<form id="whatsappForm">
+
+    <div class="form-group">
+        <label>Recipient Phone Number (with country code)</label><br>
+        <input
+            type="text"
+            id="phone"
+            value="+917510443504"
+            required>
+    </div>
+
+    <div class="form-group">
+        <label>Message</label><br>
+        <textarea
+            id="message"
+            rows="6"
+            placeholder="Type your message here..."
+            required></textarea>
+    </div>
+
+    <button type="submit">
+        Send WhatsApp Message
+    </button>
+
+</form>
+
+<div id="status"></div>
+
+<script>
+
+document.getElementById("whatsappForm").addEventListener("submit", function(e){
+
+    e.preventDefault();
+
+    const statusDiv = document.getElementById("status");
+    statusDiv.style.color = "black";
+    statusDiv.innerText = "Sending...";
+
+    const phone = document.getElementById("phone").value.trim();
+    const message = document.getElementById("message").value.trim();
+
+    // Twilio Credentials
+    const sid = "AC5c60622d0ef2ff8d65b92b0464a57c03";
+    const token = "3675c3d2c9d521b9edbd86797424cd5c";
+
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`;
+
+    const payload = new URLSearchParams();
+
+    payload.append("To", "whatsapp:" + phone);
+    payload.append("From", "whatsapp:+14155238886");
+    payload.append("Body", message);
+
+    fetch(url, {
+        method: "POST",
+        headers: {
+            "Authorization": "Basic " + btoa(sid + ":" + token),
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: payload
+    })
+    .then(async response => {
+
+        const data = await response.json();
+
+        if(response.ok){
+
+            statusDiv.style.color = "green";
+            statusDiv.innerHTML = `
+                <strong>Success!</strong><br>
+                Message SID: ${data.sid}
+            `;
+
+        }else{
+
+            statusDiv.style.color = "red";
+            statusDiv.innerHTML = `
+                <strong>Error:</strong><br>
+                ${data.message}
+            `;
+
+            console.log(data);
+
+        }
+
+    })
+    .catch(err => {
+
+        statusDiv.style.color = "red";
+        statusDiv.innerText = "Network Error";
+
+        console.error(err);
+
+    });
+
+});
+
+</script>
+
+</body>
+</html>
